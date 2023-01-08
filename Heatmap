@@ -1,0 +1,130 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Nov 23 19:46:44 2022
+
+@author: Joel
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+
+
+field_length = 120 #yards
+field_width = 55
+box = 3
+num_row = int(np.ceil(field_length / box))
+num_col = int(np.floor(field_width / box))
+
+global sel_x, sel_y
+sel_x = -1
+sel_y = -1
+
+df = pd.read_csv("C:\\Users\\Joel\\AppData\\Local\\Programs\\Python\\Python37-32\\code\\Ultimate Statistics\\Reduced Boston Analytics.csv", index_col = 0)
+
+
+
+def onclick(event):
+    
+    if event.button == 1:
+        sel_x, sel_y = [event.xdata, event.ydata]
+        
+    sel_x = np.floor(sel_x) + 0.5
+    sel_y = np.floor(sel_y) + 0.5
+        
+    plt.clf()
+    
+    ax = sns.heatmap(data_used, cmap='coolwarm')
+
+    ax.scatter(sel_x,sel_y, c='black', marker='+')
+
+    ax.invert_yaxis()
+    ax.axhline(y = 20/box, color = 'black', linestyle = '-')
+    ax.axhline(y = 100/box, color = 'black', linestyle = '-')
+    plt.title('Forcing Right')
+    fig.canvas.mpl_connect('button_press_event',onclick)
+    plt.draw()
+    
+        
+
+def heatmap(data):
+    data = data.reset_index()
+    catch_bool = [1 if i == "Completed Pass" else 0 for i in data["Event_Type"]]
+    field_count = np.zeros((num_row,num_col,2))
+
+
+
+    for i, event in enumerate(catch_bool):
+        index = i
+        coord = np.array(data.loc[index, ['Location2_x_Yard','Location2_y_Yard']])
+        if not (np.isnan(coord[0])) and not (np.isnan(coord[1])):
+
+            cell_x = int(coord[0] // box)
+            cell_y = int(coord[1] // box)
+            
+            if cell_x > num_col:
+                cell_x = num_col
+            
+        else:
+            continue
+
+
+        if event:
+            #successful catchehses
+            field_count[cell_y][cell_x][0] += 1
+
+        #total attempts
+        field_count[cell_y][cell_x][1] += 1
+
+    field_val = np.array([cell_x[0]/cell_x[1] if cell_x[1] != 0 else 0 for cell_y in field_count for cell_x in cell_y]).reshape((num_row,num_col))
+
+    return field_val
+
+data_top = ['Home_Team', 'Away_Team', 'Home_Score', 'Away_Score',
+       'Offense_Direction', 'Quarter', 'Game_Clock', 'Event_Type',
+       'Location1_x', 'Location1_y', 'Location2_x', 'Location2_y',
+       'Double_Team', 'Pass_Type', 'Broke_Mark', 'Pass_Break', 'TO_Type',
+       'Block_Type', 'Temperature', 'Wind_Speed', 'Wind_Direction',
+       'Precipitation', 'Poss_Number', 'Game_Clock_Est', 'Location1_x_Yard',
+       'Location2_x_Yard', 'Location1_y_Yard', 'Location2_y_Yard',
+       'Location1_y_Yards_To_Endzone', 'Location2_y_Yards_To_Endzone',
+       'Location1_x_Yard_From_Middle', 'Location2_x_Yard_From_Middle',
+       'Throw_x_Distance', 'Throw_y_Distance', 'Throw_Distance',
+       'Throw_x_Vector', 'Throw_y_Vector', 'Throw_Direction_Cat', 'Pull_x',
+       'Pull_y', 'Pull_x_Yard_From_Middle', 'Pull_y_Dist', 'Scoring_Pass',
+       'Throw_in_Poss', 'index', 'Number_of_Markers',
+       'Number_of_Markers_Plus_Poachers', 'Number_of_Poachers',
+       'Number_of_Closest_Defenders', 'Force_Direction', 'Throw_Angle',
+       'Overhead_Throw', 'Any_Zone_D_on_Poss', 'Any_Mixed_D_on_Poss',
+       'Any_Person_D_on_Poss', 'D_Scheme_Poss']
+
+##Where the catch was made, or turnover occured
+# coordinates = df[["Location2_x_Yard", "Location2_y_Yard", "Event_Type"]]
+
+#df.loc[(df['col1'] == value) & (df['col2'] < value)]
+
+force_right = df.loc[(df['Force_Direction'] == "Right")]
+# force_left = df.loc[(df['Force_Direction'] == "Left")]
+# force_straight = df.loc[(df['Force_Direction'] == "Straight-Up")]
+
+field_val_right = heatmap(force_right)
+# field_val_left = heatmap(force_left)
+# field_val_straight = heatmap(force_straight)
+
+
+data_used = field_val_right
+
+
+fig = plt.figure()
+ax = sns.heatmap(data_used, cmap='coolwarm')
+
+ax.scatter(sel_x,sel_y)
+
+ax.invert_yaxis()
+ax.axhline(y = 20/box, color = 'black', linestyle = '-')
+ax.axhline(y = 100/box, color = 'black', linestyle = '-')
+plt.title('Forcing Right')
+fig.canvas.mpl_connect('button_press_event',onclick)
+plt.show()
+plt.draw()
